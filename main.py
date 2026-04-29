@@ -111,10 +111,10 @@ if st.button("วิเคราะห์โอกาสสอบผ่าน"):
     # ระบบแนะนำวิดีโอ (Recommendation)
     st.write("### 📺 บทเรียนที่แนะนำสำหรับคุณ:")
     video_links = {
-        "แคลคูลัส 1": "https://www.youtube.com/watch?v=KzVre73KExw",
-        "ฟิสิกส์วิศวกรรม": "https://www.youtube.com/watch?v=pYitQ6M_oX0",
-        "โครงสร้างข้อมูล (Data Structure)": "https://www.youtube.com/watch?v=S0Q6S-X-Y-Y",
-        "ภาษาอังกฤษพื้นฐาน": "https://www.youtube.com/watch?v=D-Z9P_T83s8"
+        "แคลคูลัส 1": "https://youtu.be/1iiqYP_lljM?si=VN2EzncbMiPhA8jr",
+        "ฟิสิกส์วิศวกรรม": "https://youtu.be/EKfZeRc_59M?si=8eA9pHeCZBsE3woj",
+        "โครงสร้างข้อมูล (Data Structure)": "https://youtu.be/t9Vixss6Un4?si=TcjaaZcY0wjJg3Ja",
+        "ภาษาอังกฤษพื้นฐาน": "https://youtu.be/zvvKelLMLtU?si=qgQaVJ1w_lYya6ss"
     }
     st.video(video_links.get(in_sub, ""))
 
