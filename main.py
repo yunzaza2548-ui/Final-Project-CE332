@@ -8,18 +8,19 @@ import random
 st.set_page_config(page_title="EduPredic AI Pro", page_icon="🧠", layout="wide")
 
 # --- ALGORITHMS ---
-def merge_sort(data, key):
+def merge_sort(data, key, reverse=False):
     if len(data) <= 1: return data
     mid = len(data) // 2
-    left = merge_sort(data[:mid], key)
-    right = merge_sort(data[mid:], key)
-    return merge(left, right, key)
+    left = merge_sort(data[:mid], key, reverse)
+    right = merge_sort(data[mid:], key, reverse)
+    return merge(left, right, key, reverse)
 
-def merge(left, right, key):
+def merge(left, right, key, reverse):
     result = []
     i = j = 0
     while i < len(left) and j < len(right):
-        if left[i][key] <= right[j][key]:
+        condition = left[i][key] >= right[j][key] if reverse else left[i][key] <= right[j][key]
+        if condition:
             result.append(left[i]); i += 1
         else:
             result.append(right[j]); j += 1
@@ -42,11 +43,16 @@ subjects = [
     "Database Systems", "Computer Networks", "Artificial Intelligence", "Robotics Design"
 ]
 
+uni_options = [
+    "Bangkok University", "Chulalongkorn University", "Kasetsart University", 
+    "Mahidol University", "Thammasat University", "Chiang Mai University", 
+    "Khon Kaen University", "Prince of Songkla University", "KMUTT", "KMITL", "อื่นๆ"
+]
+
 @st.cache_data
 def generate_enhanced_mock_data(n=100):
     first_names = ["ทัตเทพ", "ณัฐพงษ์", "สิรินธร", "วรวุฒิ", "กิตติพงษ์", "ชลลดา", "ธนพล", "เบญจมาศ", "พีรพล", "วิชุดา", "ภาณุ", "อรวรรณ"]
     last_names = ["ทนันชัย", "ทองดี", "รุ่งเรือง", "สวัสดิ์รักษา", "เจริญพร", "มณีรัตน์", "ปัญญาดี", "สุขสวัสดิ์"]
-    universities = ["Bangkok University", "Chulalongkorn", "Kasetsart", "Mahidol", "Thammasat", "CMU", "KKU"]
     
     data = []
     for _ in range(n):
@@ -55,7 +61,7 @@ def generate_enhanced_mock_data(n=100):
         final = random.randint(10, 30)
         total = mid + att + work + final
         data.append({
-            "name": name, "uni": random.choice(universities),
+            "name": name, "uni": random.choice(uni_options[:-1]),
             "year": random.randint(1, 4), "subject": random.choice(subjects),
             "midterm": mid, "attendance": att, "assignment": work, "final": final,
             "total": total, "gpa": round(random.uniform(2.0, 4.0), 2)
@@ -76,7 +82,7 @@ if page == "พยากรณ์ผลการเรียน":
         col1, col2 = st.columns(2)
         with col1:
             u_name = st.text_input("ชื่อ-นามสกุล")
-            u_uni = st.selectbox("มหาวิทยาลัย", ["Bangkok University", "Chulalongkorn", "Kasetsart", "อื่นๆ"])
+            u_uni = st.selectbox("มหาวิทยาลัย", uni_options)
             u_year = st.slider("ชั้นปี", 1, 4)
             u_sub = st.selectbox("วิชาที่ต้องการพยากรณ์", subjects)
         with col2:
@@ -114,7 +120,7 @@ elif page == "วิเคราะห์เกรดเฉลี่ยราย
     
     with st.form("gpa_form"):
         u_name_gpa = st.text_input("ชื่อ-นามสกุล")
-        u_uni_gpa = st.text_input("มหาวิทยาลัย")
+        u_uni_gpa = st.selectbox("มหาวิทยาลัย", uni_options)
         u_year_gpa = st.selectbox("ชั้นปี", [1, 2, 3, 4])
         
         st.divider()
@@ -131,46 +137,59 @@ elif page == "วิเคราะห์เกรดเฉลี่ยราย
     if calc_btn:
         avg_score = sum(all_scores) / 10
         final_gpa = round((avg_score / 100) * 4, 2)
-        
         st.metric("เกรดเฉลี่ยพยากรณ์", f"{final_gpa}")
         
         if save_gpa:
-            # จำลองข้อมูลเพิ่ม (ชื่อคนไทยหลากหลาย)
             st.session_state.student_db.append({
                 "name": u_name_gpa if u_name_gpa else "Student_New", "uni": u_uni_gpa, "year": u_year_gpa,
                 "subject": "Average (All)", "midterm": 0, "attendance": 0, "assignment": 0,
                 "final": 0, "total": int(avg_score), "gpa": final_gpa
             })
-            st.success("บันทึกข้อมูลเกรดลงในระบบจัดการฐานข้อมูลเรียบร้อยแล้ว!")
+            st.success("บันทึกข้อมูลลงระบบเรียบร้อย!")
 
 # --- PAGE 3: DATABASE & ANALYTICS ---
 elif page == "ระบบจัดการฐานข้อมูล & Analytics":
-    st.title("📂 ระบบจัดการฐานข้อมูลและสถิติภาพรวม")
-    df = pd.DataFrame(st.session_state.student_db)
+    st.title("📂 ระบบจัดการฐานข้อมูล")
 
-    # --- Analytics Section ---
-    st.subheader("📈 Analytics Dashboard (จากข้อมูลในระบบ)")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.plotly_chart(px.pie(df, names='uni', title='สัดส่วนนักศึกษาตามมหาวิทยาลัย', hole=0.4), use_container_width=True)
-        st.plotly_chart(px.line(df.groupby('year')['total'].mean().reset_index(), x='year', y='total', title='แนวโน้มคะแนนเฉลี่ยตามชั้นปี'), use_container_width=True)
-    with col_b:
-        st.plotly_chart(px.scatter(df, x='midterm', y='total', color='subject', title='ความสัมพันธ์ Midterm vs Total Score'), use_container_width=True)
-        st.plotly_chart(px.histogram(df, x='gpa', title='การกระจายตัวของเกรดเฉลี่ย (GPA Distribution)', color_discrete_sequence=['skyblue']), use_container_width=True)
+    # --- Search & Sort Section (Top) ---
+    st.subheader("📑 ค้นหาและจัดเรียงข้อมูล")
+    
+    col_s1, col_s2 = st.columns([2, 1])
+    with col_s1:
+        search_q = st.text_input("🔍 ค้นหาชื่อนักศึกษา (Binary Search)")
+    
+    col_o1, col_o2 = st.columns(2)
+    with col_o1:
+        sort_opt = st.selectbox("เรียงข้อมูลตาม:", ["name", "total", "gpa", "year"])
+    with col_o2:
+        sort_order = st.radio("ลำดับการเรียง:", ["น้อยไปมาก (Ascending)", "มากไปน้อย (Descending)"], horizontal=True)
+    
+    # Process Data
+    is_reverse = True if "มากไปน้อย" in sort_order else False
+    sorted_data = merge_sort(st.session_state.student_db, sort_opt, reverse=is_reverse)
+    
+    if search_q:
+        search_ready_data = merge_sort(st.session_state.student_db, 'name')
+        res = binary_search(search_ready_data, search_q)
+        if res: st.success(f"พบข้อมูล: {res['name']} | มหาวิทยาลัย: {res['uni']} | เกรด: {res['gpa']}")
+        else: st.error("ไม่พบข้อมูล")
+
+    # Display Table with Order Index
+    df_display = pd.DataFrame(sorted_data)
+    df_display.insert(0, 'ลำดับ', range(1, len(df_display) + 1))
+    
+    st.dataframe(df_display, use_container_width=True, height=400)
+    st.caption(f"จำนวนฐานข้อมูลปัจจุบัน: {len(st.session_state.student_db)} รายการ")
 
     st.divider()
-    
-    # --- Search & Sort Section ---
-    st.subheader("📑 ค้นหาและจัดเรียงข้อมูล")
-    search_q = st.text_input("🔍 ค้นหาชื่อนักศึกษา (Binary Search)")
-    if search_q:
-        sorted_for_search = merge_sort(st.session_state.student_db, 'name')
-        res = binary_search(sorted_for_search, search_q)
-        if res: st.success(f"พบข้อมูล: {res['name']} | มหาวิทยาลัย: {res['uni']} | เกรด: {res['gpa']}")
-        else: st.error("ไม่พบข้อมูลนักศึกษาท่านนี้")
 
-    sort_opt = st.selectbox("เรียงข้อมูลโดยใช้ Merge Sort:", ["name", "total", "gpa", "year"])
-    sorted_data = merge_sort(st.session_state.student_db, sort_opt)
-    
-    st.dataframe(pd.DataFrame(sorted_data), use_container_width=True)
-    st.caption(f"จำนวนฐานข้อมูลปัจจุบัน: {len(st.session_state.student_db)} รายการ")
+    # --- Analytics Section (Bottom) ---
+    st.subheader("📈 Analytics Dashboard (สถิติจากข้อมูลในระบบ)")
+    df_anal = pd.DataFrame(st.session_state.student_db)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.plotly_chart(px.pie(df_anal, names='uni', title='สัดส่วนนักศึกษาตามมหาวิทยาลัย', hole=0.4), use_container_width=True)
+        st.plotly_chart(px.line(df_anal.groupby('year')['total'].mean().reset_index(), x='year', y='total', title='แนวโน้มคะแนนเฉลี่ยตามชั้นปี'), use_container_width=True)
+    with col_b:
+        st.plotly_chart(px.scatter(df_anal, x='midterm', y='total', color='subject', title='ความสัมพันธ์ Midterm vs Total Score'), use_container_width=True)
+        st.plotly_chart(px.histogram(df_anal, x='gpa', title='การกระจายตัวของเกรดเฉลี่ย (GPA Distribution)', color_discrete_sequence=['lightgreen']), use_container_width=True)
