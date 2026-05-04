@@ -2,126 +2,174 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-# from sklearn.tree import DecisionTreeClassifier  # Commented out due to missing sklearn
+import random
 
-# --- การตั้งค่าหน้าเว็บ ---
-st.set_page_config(page_title="EduPredict AI Pro", layout="wide", page_icon="🎓")
+# --- CONFIG & STYLING ---
+st.set_page_config(page_title="EduPredic AI", page_icon="🎓", layout="wide")
 
-# --- ส่วนของการสร้างข้อมูล (จำลอง 20 ปี) ---
-@st.cache_data
-def get_data():
-    # ในการใช้งานจริงควรดึงจาก CSV แต่ถ้าหาไฟล์ไม่เจอ ระบบจะสร้างใหม่ให้ทันที
-    try:
-        df = pd.read_csv('student_data.csv')
-        # ตรวจสอบว่าไฟล์มีคอลัมน์ที่ต้องการครบหรือไม่
-        required_cols = {"ID", "Name", "Year", "Subject", "Midterm", "Assignment", "Total", "Status"}
-        if not required_cols.issubset(df.columns):
-            raise ValueError("CSV columns not correct")
-        return df
-    except:
-        subjects = ["แคลคูลัส 1", "ฟิสิกส์วิศวกรรม", "โครงสร้างข้อมูล (Data Structure)", "ภาษาอังกฤษพื้นฐาน"]
-        names = ["สมชาย", "วิภา", "กิตติ", "ธนา", "รินดา", "พรเทพ", "นภา", "ใจดี", "มุ่งมั่น", "เก่งกล้า"]
-        data = []
-        for i in range(500):
-            total = np.random.randint(30, 95)
-            midterm = np.random.randint(10, 40)
-            assign = np.random.randint(5, 20)
-            data.append({
-                "ID": f"ID-{1000+i}",
-                "Name": f"{np.random.choice(names)} {np.random.choice(names)}",
-                "Year": np.random.randint(2006, 2026),
-                "Subject": np.random.choice(subjects),
-                "Midterm": midterm,
-                "Assignment": assign,
-                "Total": total,
-                "Status": "Pass" if total >= 50 else "Fail"
-            })
-        return pd.DataFrame(data)
-
-df = get_data()
-
-# --- CSS ตกแต่งเพิ่มเติม ---
 st.markdown("""
-    <style>
-    .main { background-color: #f5f7f9; }
-    .stButton>button { width: 100%; border-radius: 20px; background-color: #ff4b4b; color: white; }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+    .main { background-color: #f0f2f6; }
+    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #2e7d32; color: white; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
+</style>
+""", unsafe_allow_html=True)
 
-# --- SIDEBAR (Searching & Sorting) ---
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3413/3413535.png", width=100)
-st.sidebar.title("ระบบจัดการข้อมูล")
+# --- DATA STRUCTURES & ALGORITHMS ---
 
-search_query = st.sidebar.text_input("🔍 ค้นหารหัส/ชื่อ (Hash Search Logic)")
-sort_by = st.sidebar.selectbox("🔢 เรียงลำดับข้อมูล", ["คะแนน (มาก-น้อย)", "ปีการศึกษา (ใหม่-เก่า)", "ชื่อนักศึกษา"])
+def merge_sort(data, key):
+    if len(data) <= 1:
+        return data
+    mid = len(data) // 2
+    left = merge_sort(data[:mid], key)
+    right = merge_sort(data[mid:], key)
+    
+    return merge(left, right, key)
 
-# Logic สำหรับ Sorting & Searching
-filtered_df = df.copy()
+def merge(left, right, key):
+    result = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i][key] <= right[j][key]:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    result.extend(left[i:])
+    result.extend(right[j:])
+    return result
 
-if search_query:
-    filtered_df = filtered_df[filtered_df['ID'].str.contains(search_query, case=False) | filtered_df['Name'].str.contains(search_query, case=False)]
+def binary_search(data, target_name):
+    low = 0
+    high = len(data) - 1
+    while low <= high:
+        mid = (low + high) // 2
+        if data[mid]['name'] == target_name:
+            return data[mid]
+        elif data[mid]['name'] < target_name:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return None
 
-if sort_by == "คะแนน (มาก-น้อย)":
-    filtered_df = filtered_df.sort_values(by="Total", ascending=False)
-elif sort_by == "ปีการศึกษา (ใหม่-เก่า)":
-    filtered_df = filtered_df.sort_values(by="Year", ascending=False)
-elif sort_by == "ชื่อนักศึกษา":
-    filtered_df = filtered_df.sort_values(by="Name", ascending=True)
+# --- MOCK DATA GENERATOR ---
+subjects = [
+    "Computer Programming", "Data Structures", "Digital Logic", 
+    "Embedded Systems", "Operating Systems", "Software Engineering",
+    "Database Systems", "Computer Networks", "Artificial Intelligence", "Robotics Design"
+]
 
-# --- MAIN CONTENT ---
-st.title("🚀 EduPredict AI: พยากรณ์และแนะแนวการเรียน")
-st.info("ระบบนี้ใช้ Machine Learning (Decision Tree) ในการวิเคราะห์สถิติจำลองย้อนหลัง 20 ปี")
+@st.cache_data
+def generate_mock_data(n=50):
+    first_names = ["สมชาย", "วิภา", "กิตติ", "นารี", "ธนา", "พรทิพย์", "อนันต์", "สิริ", "วัชระ", "ยุพา"]
+    last_names = ["ใจดี", "รักเรียน", "เก่งกาจ", "มุ่งมั่น", "เสริมทรัพย์", "วงค์คำ", "ประเสริฐ"]
+    universities = ["BU", "CU", "KU", "MU", "TU"]
+    
+    data = []
+    for _ in range(n):
+        name = f"{random.choice(first_names)} {random.choice(last_names)}"
+        record = {
+            "name": name,
+            "uni": random.choice(universities),
+            "year": random.randint(1, 4),
+            "subject": random.choice(subjects),
+            "midterm": random.randint(15, 40),
+            "attendance": random.randint(5, 10),
+            "assignment": random.randint(10, 20),
+            "final": random.randint(10, 30),
+        }
+        record["total"] = record["midterm"] + record["attendance"] + record["assignment"] + record["final"]
+        data.append(record)
+    return data
 
-# แถวที่ 1: กราฟสถิติภาพรวม
-col_a, col_b = st.columns(2)
-with col_a:
-    fig1 = px.histogram(df, x="Total", color="Status", title="การกระจายตัวของคะแนนทั้งหมด")
-    st.plotly_chart(fig1, width='stretch')
-with col_b:
-    fig2 = px.scatter(df, x="Midterm", y="Total", color="Subject", title="ความสัมพันธ์คะแนนมิดเทอมและคะแนนรวม")
-    st.plotly_chart(fig2, width='stretch')
+if 'student_db' not in st.session_state:
+    st.session_state.student_db = generate_mock_data(60)
 
-# แถวที่ 2: ระบบ AI พยากรณ์
-st.markdown("---")
-st.subheader("🤖 พยากรณ์ผลการเรียนของคุณ")
-c1, c2, c3 = st.columns(3)
-with c1:
-    in_mid = st.number_input("คะแนน Midterm (0-40)", 0, 40, 20)
-with c2:
-    in_assign = st.number_input("คะแนนงาน (0-20)", 0, 20, 10)
-with c3:
-    in_sub = st.selectbox("วิชาที่เรียน", df['Subject'].unique())
+# --- SIDEBAR NAVIGATION ---
+st.sidebar.title("📌 Menu")
+page = st.sidebar.radio("เลือกหน้า", ["พยากรณ์ผลการเรียน", "วิเคราะห์และพยากรณ์เกรดเฉลี่ย", "Database & Search"])
 
-if st.button("วิเคราะห์โอกาสสอบผ่าน"):
-    # Simple prediction logic instead of ML (since sklearn not available)
-    score = in_mid + in_assign
-    if score >= 25:
-        prob = 75.0
-        pred = 1
-    else:
-        prob = 25.0
-        pred = 0
+# --- PAGE 1: PERFORMANCE PREDICTION ---
+if page == "พยากรณ์ผลการเรียน":
+    st.title("🎯 พยากรณ์สิทธิ์การผ่านวิชา")
+    
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.subheader("ข้อมูลนักศึกษา")
+        u_name = st.text_input("ชื่อ-นามสกุล")
+        u_uni = st.text_input("มหาวิทยาลัย")
+        u_year = st.selectbox("ชั้นปี", [1, 2, 3, 4])
+        u_sub = st.selectbox("วิชาที่ต้องการพยากรณ์", subjects)
+    
+    with col2:
+        st.subheader("คะแนนสะสม")
+        mid = st.number_input("คะแนน Midterm (เต็ม 40)", 0, 40)
+        att = st.number_input("คะแนนเข้าเรียน (เต็ม 10)", 0, 10)
+        work = st.number_input("คะแนนงาน/Project (เต็ม 20)", 0, 20)
+    
+    if st.button("วิเคราะห์โอกาสผ่าน"):
+        current_total = mid + att + work
+        chance = (current_total / 70) * 100
+        needed_final = max(0, 50 - current_total)
+        
+        st.divider()
+        c1, c2, c3 = st.columns(3)
+        c1.metric("โอกาสผ่าน", f"{int(min(chance, 100))}%")
+        c2.metric("คะแนนสะสมปัจจุบัน", f"{current_total}/70")
+        c3.metric("ต้องทำ Final อีก", f"{needed_final} คะแนน")
+        
+        if needed_final > 30:
+            st.error("⚠️ โอกาสผ่านน้อยมาก ต้องพยายามในห้องเรียนเพิ่ม!")
+        else:
+            st.success("✅ มีโอกาสผ่านสูง! สู้ๆ กับการสอบ Final")
+            
+        st.subheader("📺 คลิปแนะนำเพื่อเพิ่มความรู้")
+        st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ") # ลิงก์ตัวอย่าง
 
-    if pred == 1:
-        st.success(f"ยินดีด้วย! มีโอกาสสอบผ่าน {prob:.2f}% สำหรับวิชา {in_sub}")
+# --- PAGE 2: GPA PREDICTION ---
+elif page == "วิเคราะห์และพยากรณ์เกรดเฉลี่ย":
+    st.title("📊 คำนวณและพยากรณ์ GPA")
+    
+    with st.expander("กรอกข้อมูลรายวิชา (10 วิชา)"):
+        user_scores = []
+        cols = st.columns(2)
+        for i, sub in enumerate(subjects):
+            with cols[i%2]:
+                score = st.slider(f"คะแนนวิชา {sub}", 0, 100, 50)
+                user_scores.append(score)
+    
+    if st.button("คำนวณและบันทึกข้อมูล"):
+        avg_score = sum(user_scores) / 10
+        predicted_gpa = (avg_score / 100) * 4
+        
         st.balloons()
-    else:
-        st.error(f"ระวัง! มีโอกาสสอบผ่านเพียง {prob:.2f}% ในวิชา {in_sub} (ควรส่งงานเพิ่ม)")
+        st.metric("พยากรณ์เกรดเฉลี่ย (GPA)", f"{predicted_gpa:.2f}")
+        
+        # กราฟแสดงผล
+        df_plot = pd.DataFrame({"Subject": subjects, "Score": user_scores})
+        fig = px.bar(df_plot, x="Subject", y="Score", color="Score", title="สรุปคะแนนแต่ละรายวิชา")
+        st.plotly_chart(fig, use_container_width=True)
 
-    # ระบบแนะนำวิดีโอ (Recommendation)
-    st.write("### 📺 บทเรียนที่แนะนำสำหรับคุณ:")
-    video_links = {
-        "แคลคูลัส 1": "https://youtu.be/1iiqYP_lljM?si=VN2EzncbMiPhA8jr",
-        "ฟิสิกส์วิศวกรรม": "https://youtu.be/EKfZeRc_59M?si=8eA9pHeCZBsE3woj",
-        "โครงสร้างข้อมูล (Data Structure)": "https://youtu.be/t9Vixss6Un4?si=TcjaaZcY0wjJg3Ja",
-        "ภาษาอังกฤษพื้นฐาน": "https://youtu.be/zvvKelLMLtU?si=qgQaVJ1w_lYya6ss"
-    }
-    st.video(video_links.get(in_sub, ""))
-
-# แสดงตารางข้อมูลด้านล่างสุด และปุ่มดาวน์โหลด
-st.markdown("---")
-st.subheader("📋 ตารางรายชื่อนักศึกษา")
-st.dataframe(filtered_df, width='stretch')
-
-csv = filtered_df.to_csv(index=False)
-st.download_button("📥 ดาวน์โหลดข้อมูลที่กรอง", data=csv, file_name="filtered_students.csv", mime="text/csv")
+# --- PAGE 3: DATABASE & SEARCH ---
+elif page == "Database & Search":
+    st.title("📂 ระบบจัดการข้อมูล (Sorting & Search)")
+    
+    # Sorting
+    sort_key = st.selectbox("เรียงลำดับข้อมูลด้วย Merge Sort", ["name", "total", "midterm"])
+    sorted_data = merge_sort(st.session_state.student_db, sort_key)
+    
+    # Search
+    search_query = st.text_input("ค้นหาชื่อนักศึกษา (Binary Search)")
+    if search_query:
+        # ต้อง Sort ชื่อก่อนทำ Binary Search
+        search_data = merge_sort(st.session_state.student_db, "name")
+        result = binary_search(search_data, search_query)
+        if result:
+            st.write("🔍 พบข้อมูล:")
+            st.json(result)
+        else:
+            st.warning("ไม่พบชื่อนี้ในระบบ")
+            
+    st.subheader("ตารางข้อมูลนักศึกษาทั้งหมด")
+    st.table(pd.DataFrame(sorted_data).head(15))
