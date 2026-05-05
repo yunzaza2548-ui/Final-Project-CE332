@@ -43,6 +43,20 @@ subjects = [
     "Database Systems", "Computer Networks", "Artificial Intelligence", "Robotics Design"
 ]
 
+# คลังวิดีโอสำหรับการศึกษาต่อ (Learning Resources)
+study_resources = {
+    "Computer Programming": "https://www.youtube.com/watch?v=zOjov-2OZ0E",
+    "Data Structures": "https://www.youtube.com/watch?v=zg9ih6SVACc",
+    "Digital Logic": "https://www.youtube.com/watch?v=M0mx8S05v60",
+    "Embedded Systems": "https://www.youtube.com/watch?v=B6ofL_S_X6A",
+    "Operating Systems": "https://www.youtube.com/watch?v=26QPDBe-NB8",
+    "Software Engineering": "https://www.youtube.com/watch?v=pETh_as6Y78",
+    "Database Systems": "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+    "Computer Networks": "https://www.youtube.com/watch?v=IPvYjXCsTg8",
+    "Artificial Intelligence": "https://www.youtube.com/watch?v=ad79nYk2keg",
+    "Robotics Design": "https://www.youtube.com/watch?v=0yG-fMHeM6Y"
+}
+
 uni_options = [
     "Bangkok University", "Chulalongkorn University", "Kasetsart University", 
     "Mahidol University", "Thammasat University", "Chiang Mai University", 
@@ -104,6 +118,23 @@ if page == "พยากรณ์ผลการเรียน":
         c2.metric("คะแนนปัจจุบัน", f"{current_total}/70")
         c3.metric("ต้องทำ Final อีก", f"{needed} คะแนน")
 
+        # --- ส่วนแนะนำวิดีโอ (Learning Resources) ---
+        st.divider()
+        st.subheader(f"📚 แนะนำเนื้อหาสำหรับศึกษาเพิ่มเติม: วิชา {u_sub}")
+        
+        v_col, t_col = st.columns([3, 2])
+        with v_col:
+            video_url = study_resources.get(u_sub, "https://www.youtube.com")
+            st.video(video_url)
+        with t_col:
+            st.info(f"**EduPredict AI Advice:**")
+            if chance < 50:
+                st.warning(f"คะแนนปัจจุบันของคุณค่อนข้างเสี่ยง แนะนำให้รีบทบทวนวิดีโอนี้เป็นพิเศษ เพื่อเก็บคะแนนในส่วนของ Final ให้ได้มากกว่า {needed} คะแนนครับ!")
+            else:
+                st.success(f"คุณมีพื้นฐานที่ดีมาก! ศึกษาเพิ่มเติมจากวิดีโอนี้เพื่อต่อยอดความรู้สู่เกรด A ในวิชา {u_sub} ได้เลย")
+            st.write("---")
+            st.caption("🔍 ระบบได้คัดเลือกวิดีโอที่เหมาะสมกับรายวิชาที่คุณเลือกโดยอัตโนมัติ")
+
         if consent:
             st.session_state.student_db.append({
                 "name": u_name if u_name else "Guest", "uni": u_uni, "year": u_year,
@@ -111,7 +142,6 @@ if page == "พยากรณ์ผลการเรียน":
                 "final": 0, "total": current_total, "gpa": 0.0
             })
             st.success("✅ บันทึกข้อมูลเข้าฐานข้อมูลแล้ว")
-        st.video("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 
 # --- PAGE 2: GPA CALCULATION ---
 elif page == "วิเคราะห์เกรดเฉลี่ยรายปี":
@@ -156,7 +186,7 @@ elif page == "ระบบจัดการฐานข้อมูล & Analyt
     
     col_s1, col_s2 = st.columns([2, 1])
     with col_s1:
-        search_q = st.text_input("🔍 ค้นหาชื่อนักศึกษา (Binary Search)")
+        search_q = st.text_input("🔍 ค้นหาชื่อนักศึกษา (ต้องสะกดให้ถูกต้องสำหรับ Binary Search)")
     
     col_o1, col_o2 = st.columns(2)
     with col_o1:
@@ -169,10 +199,11 @@ elif page == "ระบบจัดการฐานข้อมูล & Analyt
     sorted_data = merge_sort(st.session_state.student_db, sort_opt, reverse=is_reverse)
     
     if search_q:
+        # Binary Search จำเป็นต้อง Sort ตาม name ก่อนเสมอ
         search_ready_data = merge_sort(st.session_state.student_db, 'name')
         res = binary_search(search_ready_data, search_q)
         if res: st.success(f"พบข้อมูล: {res['name']} | มหาวิทยาลัย: {res['uni']} | เกรด: {res['gpa']}")
-        else: st.error("ไม่พบข้อมูล")
+        else: st.error("ไม่พบข้อมูล (คำใบ้: ลองก๊อปปี้ชื่อจากตารางด้านล่างมาวาง)")
 
     # Display Table with Order Index
     df_display = pd.DataFrame(sorted_data)
@@ -184,7 +215,7 @@ elif page == "ระบบจัดการฐานข้อมูล & Analyt
     st.divider()
 
     # --- Analytics Section (Bottom) ---
-    st.subheader("📈 Analytics Dashboard (สถิติจากข้อมูลในระบบ)")
+    st.subheader("📈 Analytics Dashboard")
     df_anal = pd.DataFrame(st.session_state.student_db)
     col_a, col_b = st.columns(2)
     with col_a:
