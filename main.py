@@ -5,7 +5,7 @@ import plotly.express as px
 import random
 
 # --- CONFIG & STYLING ---
-st.set_page_config(page_title="EduPredic AI Pro", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="EduPredict AI Pro", page_icon="🧠", layout="wide")
 
 # --- ALGORITHMS ---
 def merge_sort(data, key, reverse=False):
