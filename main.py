@@ -72,7 +72,7 @@ if 'student_db' not in st.session_state:
     st.session_state.student_db = generate_enhanced_mock_data(100)
 
 # --- SIDEBAR NAVIGATION ---
-st.sidebar.title("🎓 EduPredic AI Navigation")
+st.sidebar.title("🎓 EduPredict AI Navigation")
 page = st.sidebar.radio("เมนูหลัก", ["พยากรณ์ผลการเรียน", "วิเคราะห์เกรดเฉลี่ยรายปี", "ระบบจัดการฐานข้อมูล & Analytics"])
 
 # --- PAGE 1: PREDICTION ---
