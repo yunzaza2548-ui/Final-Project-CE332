@@ -86,11 +86,14 @@ def generate_enhanced_mock_data(n=100):
         mid, att, work = random.randint(10, 40), random.randint(5, 10), random.randint(5, 20)
         final = random.randint(10, 30)
         total = mid + att + work + final
+        # สุ่มประเภทเพื่อกระจายข้อมูลตัวอย่างลงทั้ง 2 รายงาน
+        etype = random.choice(["subject_only", "gpa_only"])
         data.append({
             "name": name, "uni": random.choice(uni_options[:-1]),
             "year": random.randint(1, 4), "subject": random.choice(subjects),
             "midterm": mid, "attendance": att, "assignment": work, "final": final,
-            "total": total, "gpa": round(random.uniform(2.0, 4.0), 2)
+            "total": total, "gpa": round(random.uniform(2.0, 4.0), 2),
+            "entry_type": etype
         })
     return data
 
@@ -121,7 +124,6 @@ if page == "พยากรณ์ผลการเรียน":
         submit = st.form_submit_button("เริ่มการพยากรณ์")
 
     if submit:
-        # เรียกใช้ AI Prediction Logic
         current_total, chance, needed = predict_performance(mid, att, work)
         
         st.subheader("📊 ผลการวิเคราะห์")
@@ -143,19 +145,19 @@ if page == "พยากรณ์ผลการเรียน":
                 st.success(f"คุณมีพื้นฐานที่ดีมาก! ศึกษาเพิ่มเติมเพื่อคว้าเกรด A ในวิชา {u_sub} ได้เลย")
 
         if consent:
+            # บันทึกเฉพาะ entry_type = "subject_only"
             st.session_state.student_db.append({
                 "name": u_name if u_name else "Guest", "uni": u_uni, "year": u_year,
                 "subject": u_sub, "midterm": mid, "attendance": att, "assignment": work,
-                "final": 0, "total": current_total, "gpa": 0.0
+                "final": 0, "total": current_total, "gpa": 0.0, "entry_type": "subject_only"
             })
-            st.success("✅ บันทึกข้อมูลเข้าฐานข้อมูลแล้ว")
+            st.success("✅ บันทึกข้อมูลลงใน 'รายงานผลการเรียนรายวิชา' แล้ว")
 
 # --- PAGE 2: GPA ANALYSIS ---
 elif page == "วิเคราะห์เกรดเฉลี่ยรายปี":
     st.title("📉 คำนวณและพยากรณ์เกรดเฉลี่ย (GPA)")
     
     with st.form("gpa_form"):
-        # 1. ข้อมูลพื้นฐาน
         col_u1, col_u2, col_u3 = st.columns(3)
         with col_u1:
             u_name_gpa = st.text_input("ชื่อ-นามสกุล")
@@ -167,7 +169,6 @@ elif page == "วิเคราะห์เกรดเฉลี่ยราย
         st.divider()
         st.write("### 📝 กรอกคะแนนรายวิชา (0-100)")
         
-        # 2. กรอกคะแนนรายวิชา
         cols = st.columns(2)
         all_scores = []
         for i, sub in enumerate(subjects):
@@ -176,90 +177,87 @@ elif page == "วิเคราะห์เกรดเฉลี่ยราย
                 all_scores.append(score)
         
         st.divider()
-        # 3. ติ๊กยินยอม
         gpa_consent = st.checkbox("ยินยอมให้บันทึกข้อมูลเพื่อนำไปใช้ในระบบจัดการฐานข้อมูล & Analytics")
         calc_btn = st.form_submit_button("คำนวณและบันทึกข้อมูลลงระบบ")
 
     if calc_btn:
-        # คำนวณเกรดเฉลี่ย (Logic: แปลงคะแนนดิบเป็นเกรด 4.0)
         avg_score = sum(all_scores) / len(all_scores)
         final_gpa = round((avg_score / 100) * 4, 2)
         
-        # 4. แสดงผลเกรดพยากรณ์
         st.subheader("📊 ผลการวิเคราะห์")
         st.info(f"คุณ **{u_name_gpa if u_name_gpa else 'นักศึกษา'}** มหาวิทยาลัย **{u_uni_gpa}** ชั้นปีที่ **{u_year_gpa}**")
         st.metric("เกรดเฉลี่ยพยากรณ์ (GPA)", f"{final_gpa}")
 
-        # 5. บันทึกข้อมูลลง Database (st.session_state.student_db)
         if gpa_consent:
+            # บันทึกเฉพาะ entry_type = "gpa_only"
             new_data = {
                 "name": u_name_gpa if u_name_gpa else "Guest Student",
                 "uni": u_uni_gpa,
                 "year": u_year_gpa,
                 "subject": "เฉลี่ยทุกรายวิชา",
-                "midterm": int(avg_score * 0.4),  # จำลองสัดส่วนคะแนน
-                "attendance": 10,
-                "assignment": 20,
-                "final": int(avg_score * 0.3),
+                "midterm": 0,
+                "attendance": 0,
+                "assignment": 0,
+                "final": 0,
                 "total": int(avg_score),
-                "gpa": final_gpa
+                "gpa": final_gpa,
+                "entry_type": "gpa_only"
             }
-            # เพิ่มข้อมูลลงใน list หลัก
             st.session_state.student_db.append(new_data)
-            st.success("✅ บันทึกข้อมูลเข้าสู่หน้า 'ระบบจัดการฐานข้อมูล & Analytics' เรียบร้อยแล้ว")
+            st.success("✅ บันทึกข้อมูลลงใน 'รายงานเกรดเฉลี่ยสะสม (GPA)' เรียบร้อยแล้ว")
         else:
             st.warning("⚠️ ไม่ได้บันทึกข้อมูล เนื่องจากคุณไม่กดยินยอม")
+
 # --- PAGE 3: DB & ANALYTICS (RESTRUCTURED) ---
 elif page == "ระบบจัดการฐานข้อมูล & Analytics":
     st.title("📂 ระบบจัดการฐานข้อมูล & Analytics")
     
-    # สร้าง Tabs เพื่อแยกการทำงาน
     tab1, tab2 = st.tabs(["🔍 ค้นหาคะแนนรายวิชา", "🎓 วิเคราะห์เกรดเฉลี่ย (GPA)"])
 
-    # --- TAB 1: ค้นหาคะแนนรายวิชา ---
+    full_df = pd.DataFrame(st.session_state.student_db)
+
+    # --- TAB 1: ค้นหาคะแนนรายวิชา (แสดงเฉพาะข้อมูลจากหน้าพยากรณ์) ---
     with tab1:
         st.header("📊 รายงานผลการเรียนรายวิชา")
         
-        # ส่วนค้นหาและเรียงลำดับ (รายวิชา)
         c1, c2 = st.columns([2, 1])
         with c1:
             search_sub = st.text_input("🔍 ค้นชื่อนักศึกษา (ดูคะแนนรายวิชา)", key="search_s1")
         with c2:
             sort_sub = st.selectbox("เรียงตามคะแนน(จากมากไปน้อย):", ["total", "midterm", "final"], key="sort_s1")
 
-        # กรองข้อมูล (ไม่เอา GPA)
-        df_sub = pd.DataFrame(st.session_state.student_db).drop(columns=['gpa'])
+        # กรองเฉพาะข้อมูลรายวิชา (subject_only) และซ่อน GPA
+        df_sub = full_df[full_df['entry_type'] == 'subject_only'].drop(columns=['gpa', 'entry_type'])
         
         if search_sub:
             df_sub = df_sub[df_sub['name'].str.contains(search_sub)]
         
         st.dataframe(df_sub.sort_values(by=sort_sub, ascending=False), use_container_width=True)
 
-        # กราฟสำหรับรายวิชา
         st.divider()
         st.subheader("📈 Analytics: สถิติคะแนน")
-        g1, g2 = st.columns(2)
-        with g1:
-            # กราฟแท่งแสดงคะแนนเฉลี่ยแต่ละวิชา
-            avg_sub = df_sub.groupby('subject')['total'].mean().reset_index()
-            st.plotly_chart(px.bar(avg_sub, x='subject', y='total', color='subject', title='คะแนนเฉลี่ยรวมในแต่ละรายวิชา'), use_container_width=True)
-        with g2:
-            # กราฟ Scatter ดูความสัมพันธ์ Midterm vs Final
-            st.plotly_chart(px.scatter(df_sub, x='midterm', y='final', color='subject', size='total', title='ความสัมพันธ์คะแนนกลางภาค และ ปลายภาค'), use_container_width=True)
+        if not df_sub.empty:
+            g1, g2 = st.columns(2)
+            with g1:
+                avg_sub = df_sub.groupby('subject')['total'].mean().reset_index()
+                st.plotly_chart(px.bar(avg_sub, x='subject', y='total', color='subject', title='คะแนนเฉลี่ยรวมในแต่ละรายวิชา'), use_container_width=True)
+            with g2:
+                st.plotly_chart(px.scatter(df_sub, x='midterm', y='final', color='subject', size='total', title='ความสัมพันธ์คะแนนกลางภาค และ ปลายภาค'), use_container_width=True)
+        else:
+            st.info("ยังไม่มีข้อมูลรายวิชา")
 
-    # --- TAB 2: วิเคราะห์เกรดเฉลี่ย (GPA) ---
+    # --- TAB 2: วิเคราะห์เกรดเฉลี่ย (แสดงเฉพาะข้อมูลจากหน้าวิเคราะห์เกรดเฉลี่ยรายปี) ---
     with tab2:
         st.header("🏆 รายงานเกรดเฉลี่ยสะสม (GPA)")
         
-        # ส่วนค้นหาและเรียงลำดับ (GPA)
         c3, c4 = st.columns([2, 1])
         with c3:
             search_gpa = st.text_input("🔍 ค้นชื่อนักศึกษา (ดู GPA)", key="search_s2")
         with c4:
             sort_gpa = st.radio("ลำดับ GPA:", ["มากไปน้อย", "น้อยไปมาก"], horizontal=True)
 
-        # กรองข้อมูล (เน้น GPA)
-        df_gpa = pd.DataFrame(st.session_state.student_db)[['name', 'uni', 'year', 'gpa']]
+        # กรองเฉพาะข้อมูลเกรดเฉลี่ย (gpa_only)
+        df_gpa = full_df[full_df['entry_type'] == 'gpa_only'][['name', 'uni', 'year', 'gpa']]
         
         if search_gpa:
             df_gpa = df_gpa[df_gpa['name'].str.contains(search_gpa)]
@@ -267,26 +265,17 @@ elif page == "ระบบจัดการฐานข้อมูล & Analyt
         is_asc = True if sort_gpa == "น้อยไปมาก" else False
         st.dataframe(df_gpa.sort_values(by='gpa', ascending=is_asc), use_container_width=True)
 
-        # กราฟสำหรับ GPA
         st.divider()
         st.subheader("📉 Analytics: วิเคราะห์เกรด")
-        g3, g4 = st.columns(2)
-        with g3:
-            # กราฟวงกลม สัดส่วนช่วงเกรด
-            df_gpa['grade_range'] = pd.cut(df_gpa['gpa'], bins=[0, 2, 3, 3.5, 4], labels=['< 2.0', '2.0-3.0', '3.0-3.5', '3.5-4.0'])
-            st.plotly_chart(px.pie(df_gpa, names='grade_range', title='สัดส่วนกลุ่มเกรดเฉลี่ยนักศึกษาทั้งหมด', hole=0.4), use_container_width=True)
-        with g4:
-            # กราฟกล่อง (Box Plot) ดูการกระจายเกรดแยกตามมหาวิทยาลัย
-            st.plotly_chart(px.box(df_gpa, x='uni', y='gpa', color='uni', title='การกระจายตัวของเกรดแยกตามมหาวิทยาลัย'), use_container_width=True)
+        if not df_gpa.empty:
+            g3, g4 = st.columns(2)
+            with g3:
+                df_gpa['grade_range'] = pd.cut(df_gpa['gpa'], bins=[0, 2, 3, 3.5, 4], labels=['< 2.0', '2.0-3.0', '3.0-3.5', '3.5-4.0'])
+                st.plotly_chart(px.pie(df_gpa, names='grade_range', title='สัดส่วนกลุ่มเกรดเฉลี่ยนักศึกษาทั้งหมด', hole=0.4), use_container_width=True)
+            with g4:
+                st.plotly_chart(px.box(df_gpa, x='uni', y='gpa', color='uni', title='การกระจายตัวของเกรดแยกตามมหาวิทยาลัย'), use_container_width=True)
             
-        # กราฟเพิ่มเติมด้านล่าง (Line Chart เทรนด์เกรดตามชั้นปี)
-        avg_year = df_gpa.groupby('year')['gpa'].mean().reset_index()
-        st.plotly_chart(px.line(avg_year, x='year', y='gpa', markers=True, title='แนวโน้มเกรดเฉลี่ยเฉลี่ยตามชั้นปี (1-4)'), use_container_width=True)
-    # VISUALIZATION
-    st.divider()
-    df_anal = pd.DataFrame(st.session_state.student_db)
-    ga, gb = st.columns(2)
-    with ga:
-        st.plotly_chart(px.pie(df_anal, names='uni', title='สัดส่วนตามมหาวิทยาลัย'), use_container_width=True)
-    with gb:
-        st.plotly_chart(px.histogram(df_anal, x='gpa', title='การกระจายเกรดเฉลี่ย'), use_container_width=True)
+            avg_year = df_gpa.groupby('year')['gpa'].mean().reset_index()
+            st.plotly_chart(px.line(avg_year, x='year', y='gpa', markers=True, title='แนวโน้มเกรดเฉลี่ยเฉลี่ยตามชั้นปี (1-4)'), use_container_width=True)
+        else:
+            st.info("ยังไม่มีข้อมูล GPA")
