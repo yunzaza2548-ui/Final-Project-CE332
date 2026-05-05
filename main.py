@@ -155,21 +155,47 @@ elif page == "วิเคราะห์เกรดเฉลี่ยราย
     st.title("📉 คำนวณและพยากรณ์เกรดเฉลี่ย (GPA)")
     with st.form("gpa_form"):
         u_name_gpa = st.text_input("ชื่อ-นามสกุล")
+        u_uni_gpa = st.selectbox("มหาวิทยาลัย", uni_options, key="uni_gpa")
         u_year_gpa = st.selectbox("ชั้นปี", [1, 2, 3, 4])
         st.divider()
+        
+        st.write("### 📝 กรอกคะแนนรายวิชา")
         cols = st.columns(2)
         all_scores = []
         for i, sub in enumerate(subjects):
-            with cols[i%2]:
-                score = st.number_input(f"คะแนนวิชา {sub} (0-100)", 0, 100, 50, key=f"sub_{i}")
+            with cols[i % 2]:
+                score = st.number_input(f"วิชา {sub} (0-100)", 0, 100, 50, key=f"sub_gpa_{i}")
                 all_scores.append(score)
-        calc_btn = st.form_submit_button("คำนวณ GPA")
+        
+        st.divider()
+        # เพิ่ม Checkbox ยินยอมตามที่คุณต้องการ
+        gpa_consent = st.checkbox("ยินยอมให้บันทึกข้อมูลผลการเรียนเพื่อนำไปพัฒนาระบบ AI")
+        calc_btn = st.form_submit_button("คำนวณและบันทึกข้อมูล")
 
     if calc_btn:
-        avg_score = sum(all_scores) / 10
+        # คำนวณ GPA (Logic เดิม: เฉลี่ยจาก 10 วิชา)
+        avg_score = sum(all_scores) / len(subjects)
         final_gpa = round((avg_score / 100) * 4, 2)
-        st.metric("เกรดเฉลี่ยพยากรณ์", f"{final_gpa}")
+        
+        # แสดงผลลัพธ์
+        st.success(f"### ผลการวิเคราะห์ของคุณ {u_name_gpa if u_name_gpa else 'นักศึกษา'}")
+        st.metric("เกรดเฉลี่ยพยากรณ์ (GPA)", f"{final_gpa}")
 
+        # ตรวจสอบการยินยอมและบันทึกลงฐานข้อมูล
+        if gpa_consent:
+            new_entry = {
+                "name": u_name_gpa if u_name_gpa else "Guest",
+                "uni": u_uni_gpa,
+                "year": u_year_gpa,
+                "subject": "All Subjects (GPA Calc)",
+                "midterm": 0, "attendance": 0, "assignment": 0, "final": 0, # ข้อมูลจำลองสำหรับโครงสร้าง DB
+                "total": int(avg_score),
+                "gpa": final_gpa
+            }
+            st.session_state.student_db.append(new_entry)
+            st.info("✅ บันทึกประวัติเกรดเฉลี่ยลงในฐานข้อมูล Analytics แล้ว")
+        else:
+            st.warning("⚠️ ข้อมูลนี้จะไม่ถูกบันทึกเนื่องจากคุณไม่ได้เลือกยอมรับการใช้ข้อมูล")
 # --- PAGE 3: DB & ANALYTICS ---
 elif page == "ระบบจัดการฐานข้อมูล & Analytics":
     st.title("📂 ระบบจัดการฐานข้อมูล & Analytics")
