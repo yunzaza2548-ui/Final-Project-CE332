@@ -225,7 +225,7 @@ elif page == "ระบบจัดการฐานข้อมูล & Analyt
         with c1:
             search_sub = st.text_input("🔍 ค้นชื่อนักศึกษา (ดูคะแนนรายวิชา)", key="search_s1")
         with c2:
-            sort_sub = st.selectbox("เรียงตามคะแนน:", ["total", "midterm", "final"], key="sort_s1")
+            sort_sub = st.selectbox("เรียงตามคะแนน(จากมากไปน้อย):", ["total", "midterm", "final"], key="sort_s1")
 
         # กรองข้อมูล (ไม่เอา GPA)
         df_sub = pd.DataFrame(st.session_state.student_db).drop(columns=['gpa'])
