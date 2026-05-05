@@ -209,33 +209,79 @@ elif page == "วิเคราะห์เกรดเฉลี่ยราย
             st.success("✅ บันทึกข้อมูลเข้าสู่หน้า 'ระบบจัดการฐานข้อมูล & Analytics' เรียบร้อยแล้ว")
         else:
             st.warning("⚠️ ไม่ได้บันทึกข้อมูล เนื่องจากคุณไม่กดยินยอม")
-# --- PAGE 3: DB & ANALYTICS ---
+# --- PAGE 3: DB & ANALYTICS (RESTRUCTURED) ---
 elif page == "ระบบจัดการฐานข้อมูล & Analytics":
     st.title("📂 ระบบจัดการฐานข้อมูล & Analytics")
-
-    # SEARCH & SORT
-    col_s1, col_s2 = st.columns([2, 1])
-    with col_s1:
-        search_q = st.text_input("🔍 ค้นหาชื่อนักศึกษา (Binary Search)")
     
-    col_o1, col_o2 = st.columns(2)
-    with col_o1:
-        sort_opt = st.selectbox("เรียงข้อมูลตาม:", ["name", "total", "gpa", "year"])
-    with col_o2:
-        sort_order = st.radio("ลำดับ:", ["น้อยไปมาก", "มากไปน้อย"], horizontal=True)
+    # สร้าง Tabs เพื่อแยกการทำงาน
+    tab1, tab2 = st.tabs(["🔍 ค้นหาคะแนนรายวิชา", "🎓 วิเคราะห์เกรดเฉลี่ย (GPA)"])
 
-    # Algorithm Execution
-    is_rev = True if "มากไปน้อย" in sort_order else False
-    sorted_data = merge_sort(st.session_state.student_db, sort_opt, reverse=is_rev)
+    # --- TAB 1: ค้นหาคะแนนรายวิชา ---
+    with tab1:
+        st.header("📊 รายงานผลการเรียนรายวิชา")
+        
+        # ส่วนค้นหาและเรียงลำดับ (รายวิชา)
+        c1, c2 = st.columns([2, 1])
+        with c1:
+            search_sub = st.text_input("🔍 ค้นชื่อนักศึกษา (ดูคะแนนรายวิชา)", key="search_s1")
+        with c2:
+            sort_sub = st.selectbox("เรียงตามคะแนน:", ["total", "midterm", "final"], key="sort_s1")
 
-    if search_q:
-        search_ready = merge_sort(st.session_state.student_db, 'name')
-        res = binary_search(search_ready, search_q)
-        if res: st.success(f"พบข้อมูล: {res['name']} | เกรด: {res['gpa']}")
-        else: st.error("ไม่พบข้อมูลในระบบ")
+        # กรองข้อมูล (ไม่เอา GPA)
+        df_sub = pd.DataFrame(st.session_state.student_db).drop(columns=['gpa'])
+        
+        if search_sub:
+            df_sub = df_sub[df_sub['name'].str.contains(search_sub)]
+        
+        st.dataframe(df_sub.sort_values(by=sort_sub, ascending=False), use_container_width=True)
 
-    st.dataframe(pd.DataFrame(sorted_data), use_container_width=True)
+        # กราฟสำหรับรายวิชา
+        st.divider()
+        st.subheader("📈 Analytics: สถิติคะแนน")
+        g1, g2 = st.columns(2)
+        with g1:
+            # กราฟแท่งแสดงคะแนนเฉลี่ยแต่ละวิชา
+            avg_sub = df_sub.groupby('subject')['total'].mean().reset_index()
+            st.plotly_chart(px.bar(avg_sub, x='subject', y='total', color='subject', title='คะแนนเฉลี่ยรวมในแต่ละรายวิชา'), use_container_width=True)
+        with g2:
+            # กราฟ Scatter ดูความสัมพันธ์ Midterm vs Final
+            st.plotly_chart(px.scatter(df_sub, x='midterm', y='final', color='subject', size='total', title='ความสัมพันธ์คะแนนกลางภาค และ ปลายภาค'), use_container_width=True)
 
+    # --- TAB 2: วิเคราะห์เกรดเฉลี่ย (GPA) ---
+    with tab2:
+        st.header("🏆 รายงานเกรดเฉลี่ยสะสม (GPA)")
+        
+        # ส่วนค้นหาและเรียงลำดับ (GPA)
+        c3, c4 = st.columns([2, 1])
+        with c3:
+            search_gpa = st.text_input("🔍 ค้นชื่อนักศึกษา (ดู GPA)", key="search_s2")
+        with c4:
+            sort_gpa = st.radio("ลำดับ GPA:", ["มากไปน้อย", "น้อยไปมาก"], horizontal=True)
+
+        # กรองข้อมูล (เน้น GPA)
+        df_gpa = pd.DataFrame(st.session_state.student_db)[['name', 'uni', 'year', 'gpa']]
+        
+        if search_gpa:
+            df_gpa = df_gpa[df_gpa['name'].str.contains(search_gpa)]
+        
+        is_asc = True if sort_gpa == "น้อยไปมาก" else False
+        st.dataframe(df_gpa.sort_values(by='gpa', ascending=is_asc), use_container_width=True)
+
+        # กราฟสำหรับ GPA
+        st.divider()
+        st.subheader("📉 Analytics: วิเคราะห์เกรด")
+        g3, g4 = st.columns(2)
+        with g3:
+            # กราฟวงกลม สัดส่วนช่วงเกรด
+            df_gpa['grade_range'] = pd.cut(df_gpa['gpa'], bins=[0, 2, 3, 3.5, 4], labels=['< 2.0', '2.0-3.0', '3.0-3.5', '3.5-4.0'])
+            st.plotly_chart(px.pie(df_gpa, names='grade_range', title='สัดส่วนกลุ่มเกรดเฉลี่ยนักศึกษาทั้งหมด', hole=0.4), use_container_width=True)
+        with g4:
+            # กราฟกล่อง (Box Plot) ดูการกระจายเกรดแยกตามมหาวิทยาลัย
+            st.plotly_chart(px.box(df_gpa, x='uni', y='gpa', color='uni', title='การกระจายตัวของเกรดแยกตามมหาวิทยาลัย'), use_container_width=True)
+            
+        # กราฟเพิ่มเติมด้านล่าง (Line Chart เทรนด์เกรดตามชั้นปี)
+        avg_year = df_gpa.groupby('year')['gpa'].mean().reset_index()
+        st.plotly_chart(px.line(avg_year, x='year', y='gpa', markers=True, title='แนวโน้มเกรดเฉลี่ยเฉลี่ยตามชั้นปี (1-4)'), use_container_width=True)
     # VISUALIZATION
     st.divider()
     df_anal = pd.DataFrame(st.session_state.student_db)
