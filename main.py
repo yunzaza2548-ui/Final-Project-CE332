@@ -153,49 +153,62 @@ if page == "พยากรณ์ผลการเรียน":
 # --- PAGE 2: GPA ANALYSIS ---
 elif page == "วิเคราะห์เกรดเฉลี่ยรายปี":
     st.title("📉 คำนวณและพยากรณ์เกรดเฉลี่ย (GPA)")
+    
     with st.form("gpa_form"):
-        u_name_gpa = st.text_input("ชื่อ-นามสกุล")
-        u_uni_gpa = st.selectbox("มหาวิทยาลัย", uni_options, key="uni_gpa")
-        u_year_gpa = st.selectbox("ชั้นปี", [1, 2, 3, 4])
+        # 1. ข้อมูลพื้นฐาน
+        col_u1, col_u2, col_u3 = st.columns(3)
+        with col_u1:
+            u_name_gpa = st.text_input("ชื่อ-นามสกุล")
+        with col_u2:
+            u_uni_gpa = st.selectbox("มหาวิทยาลัย", uni_options)
+        with col_u3:
+            u_year_gpa = st.selectbox("ชั้นปี", [1, 2, 3, 4])
+            
         st.divider()
+        st.write("### 📝 กรอกคะแนนรายวิชา (0-100)")
         
-        st.write("### 📝 กรอกคะแนนรายวิชา")
+        # 2. กรอกคะแนนรายวิชา
         cols = st.columns(2)
         all_scores = []
         for i, sub in enumerate(subjects):
             with cols[i % 2]:
-                score = st.number_input(f"วิชา {sub} (0-100)", 0, 100, 50, key=f"sub_gpa_{i}")
+                score = st.number_input(f"วิชา {sub}", 0, 100, 50, key=f"gpa_input_{i}")
                 all_scores.append(score)
         
         st.divider()
-        # เพิ่ม Checkbox ยินยอมตามที่คุณต้องการ
-        gpa_consent = st.checkbox("ยินยอมให้บันทึกข้อมูลผลการเรียนเพื่อนำไปพัฒนาระบบ AI")
-        calc_btn = st.form_submit_button("คำนวณและบันทึกข้อมูล")
+        # 3. ติ๊กยินยอม
+        gpa_consent = st.checkbox("ยินยอมให้บันทึกข้อมูลเพื่อนำไปใช้ในระบบจัดการฐานข้อมูล & Analytics")
+        calc_btn = st.form_submit_button("คำนวณและบันทึกข้อมูลลงระบบ")
 
     if calc_btn:
-        # คำนวณ GPA (Logic เดิม: เฉลี่ยจาก 10 วิชา)
-        avg_score = sum(all_scores) / len(subjects)
+        # คำนวณเกรดเฉลี่ย (Logic: แปลงคะแนนดิบเป็นเกรด 4.0)
+        avg_score = sum(all_scores) / len(all_scores)
         final_gpa = round((avg_score / 100) * 4, 2)
         
-        # แสดงผลลัพธ์
-        st.success(f"### ผลการวิเคราะห์ของคุณ {u_name_gpa if u_name_gpa else 'นักศึกษา'}")
+        # 4. แสดงผลเกรดพยากรณ์
+        st.subheader("📊 ผลการวิเคราะห์")
+        st.info(f"คุณ **{u_name_gpa if u_name_gpa else 'นักศึกษา'}** มหาวิทยาลัย **{u_uni_gpa}** ชั้นปีที่ **{u_year_gpa}**")
         st.metric("เกรดเฉลี่ยพยากรณ์ (GPA)", f"{final_gpa}")
 
-        # ตรวจสอบการยินยอมและบันทึกลงฐานข้อมูล
+        # 5. บันทึกข้อมูลลง Database (st.session_state.student_db)
         if gpa_consent:
-            new_entry = {
-                "name": u_name_gpa if u_name_gpa else "Guest",
+            new_data = {
+                "name": u_name_gpa if u_name_gpa else "Guest Student",
                 "uni": u_uni_gpa,
                 "year": u_year_gpa,
-                "subject": "All Subjects (GPA Calc)",
-                "midterm": 0, "attendance": 0, "assignment": 0, "final": 0, # ข้อมูลจำลองสำหรับโครงสร้าง DB
+                "subject": "เฉลี่ยทุกรายวิชา",
+                "midterm": int(avg_score * 0.4),  # จำลองสัดส่วนคะแนน
+                "attendance": 10,
+                "assignment": 20,
+                "final": int(avg_score * 0.3),
                 "total": int(avg_score),
                 "gpa": final_gpa
             }
-            st.session_state.student_db.append(new_entry)
-            st.info("✅ บันทึกประวัติเกรดเฉลี่ยลงในฐานข้อมูล Analytics แล้ว")
+            # เพิ่มข้อมูลลงใน list หลัก
+            st.session_state.student_db.append(new_data)
+            st.success("✅ บันทึกข้อมูลเข้าสู่หน้า 'ระบบจัดการฐานข้อมูล & Analytics' เรียบร้อยแล้ว")
         else:
-            st.warning("⚠️ ข้อมูลนี้จะไม่ถูกบันทึกเนื่องจากคุณไม่ได้เลือกยอมรับการใช้ข้อมูล")
+            st.warning("⚠️ ไม่ได้บันทึกข้อมูล เนื่องจากคุณไม่กดยินยอม")
 # --- PAGE 3: DB & ANALYTICS ---
 elif page == "ระบบจัดการฐานข้อมูล & Analytics":
     st.title("📂 ระบบจัดการฐานข้อมูล & Analytics")
