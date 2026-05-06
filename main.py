@@ -124,7 +124,7 @@ page = st.sidebar.radio("เมนูหลัก", ["พยากรณ์ผ�
 
 # --- หน้าที่ 1: พยากรณ์ ---
 if page == "พยากรณ์ผลการเรียน":
-    st.title("🎯 ระบบพยากรณ์ผลการเรียน (AI Powered)")
+    st.title("🎯 ระบบพยากรณ์ผลการเรียน (EduPredict AI Pro)")
     with st.form("predict_form"):
         col1, col2 = st.columns(2)
         with col1:
