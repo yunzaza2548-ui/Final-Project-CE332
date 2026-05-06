@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 import random
 
---- CONFIG & STYLING ---
+#--- CONFIG & STYLING ---
 
 st.set_page_config(page_title="EduPredict AI Pro", page_icon="🧠", layout="wide")
 
