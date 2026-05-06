@@ -5,14 +5,20 @@ import plotly.express as px
 import random
 from sklearn.linear_model import LinearRegression
 
-# --- 0. CONFIGURATION ---
+# ==========================================================
+# ส่วนที่ 0: CONFIGURATION
+# หน้าที่: ตั้งค่าพื้นฐานแอปพลิเคชัน (ชื่อแถบเว็บ, ไอคอน, และ Layout)
+# ==========================================================
 st.set_page_config(page_title="EduPredict AI Pro", page_icon="🧠", layout="wide")
 
 # ==========================================================
-# 1. ALGORITHMS (SORT & SEARCH)
+# ส่วนที่ 1: ALGORITHMS (SORT & SEARCH)
+# หน้าที่: ส่วนประมวลผลการจัดเรียงและการค้นหาข้อมูลนักศึกษา
 # ==========================================================
 
-# [SORTING]: Merge Sort (O(n log n))
+# [1.1] Merge Sort: ขั้นตอนวิธีเรียงลำดับแบบแบ่งครึ่ง (O(n log n))
+# การทำงาน: แบ่งข้อมูลออกเป็นส่วนย่อยที่สุดแล้วนำกลับมาประกอบกันใหม่โดยเรียงตามค่าที่เลือก
+# เหตุผล: มีความเร็วคงที่และเสถียร (Stable) เหมาะสำหรับข้อมูลที่มีปริมาณมาก
 def merge_sort(data, key, reverse=True): 
     if len(data) <= 1: return data
     mid = len(data) // 2
@@ -34,7 +40,9 @@ def merge(left, right, key, reverse):
     result.extend(left[i:]); result.extend(right[j:])
     return result
 
-# [SEARCHING]: Binary Search (O(log n))
+# [1.2] Binary Search: ขั้นตอนวิธีค้นหาข้อมูลแบบแบ่งครึ่ง (O(log n))
+# การทำงาน: ตรวจสอบค่าตรงกลางแล้วตัดข้อมูลที่ไม่เกี่ยวข้องทิ้งทีละครึ่ง (ต้อง Sort ก่อนใช้)
+# เหตุผล: ค้นหาชื่อนักศึกษาได้รวดเร็วกว่าการไล่ตรวจทีละชื่อ (Linear Search)
 def binary_search_all(data, key, target):
     low, high = 0, len(data) - 1
     results = []
@@ -55,9 +63,11 @@ def binary_search_all(data, key, target):
     return results
 
 # ==========================================================
-# 2. MACHINE LEARNING LOGIC
+# ส่วนที่ 2: MACHINE LEARNING LOGIC
+# หน้าที่: ใช้ AI ในการวิเคราะห์แนวโน้มและพยากรณ์คะแนนปลายภาค
+# การทำงาน: ใช้ Linear Regression คำนวณหาความสัมพันธ์ระหว่างคะแนนเก็บและคะแนนสอบจริง
+# เหตุผล: เพื่อวิเคราะห์โอกาสในการสอบผ่านและช่วยให้นักศึกษาวางแผนการเรียนได้
 # ==========================================================
-
 def predict_with_ml(mid, att, work, db):
     df = pd.DataFrame(db)
     train_df = df[(df['entry_type'] == 'subject_only') & (df['final'] > 0)]
@@ -70,7 +80,8 @@ def predict_with_ml(mid, att, work, db):
     return current_total, (current_total / 70) * 100, max(0, 50 - current_total), 0, 0.0
 
 # ==========================================================
-# 3. MOCK DATA & CONSTANTS (THAI NAMES & VARIOUS UNIS)
+# ส่วนที่ 3: DATA MANAGEMENT & RESOURCES
+# หน้าที่: จัดเตรียมฐานข้อมูลจำลอง (Mock Data) และแหล่งเรียนรู้ต่อยอด
 # ==========================================================
 
 universities = [
@@ -81,7 +92,7 @@ universities = [
 
 subjects = ["Computer Programming", "Data Structures", "Digital Logic", "Embedded Systems", "Operating Systems", "Software Engineering", "Database Systems", "Computer Networks", "Artificial Intelligence", "Robotics Design"]
 
-# ลิงก์วิดีโอแนะนำการเรียนต่อยอดในแต่ละวิชา
+# Course Recommendation: ลิงก์ YouTube แนะนำการเรียนต่อยอดตามแต่ละรายวิชา
 study_resources = {
     "Computer Programming": "https://www.youtube.com/watch?v=zOjov-2OZ0E",
     "Data Structures": "https://www.youtube.com/watch?v=zg9ih6SVACc",
@@ -95,6 +106,7 @@ study_resources = {
     "Robotics Design": "https://www.youtube.com/watch?v=0yG-fMHeM6Y"
 }
 
+# Session State: ระบบจำข้อมูลนักศึกษา 200 รายการในหน่วยความจำ ไม่ให้หายเมื่อ Refresh
 if 'student_db' not in st.session_state:
     fnames = ["ทัตเทพ", "ณัฐพงษ์", "สิรินธร", "วรวุฒิ", "กิตติพงษ์", "ชลลดา", "ธนพล", "เบญจมาศ", "วิชุดา", "ภาณุ"]
     lnames = ["ทนันชัย", "ทองดี", "รุ่งเรือง", "สวัสดิ์รักษา", "เจริญพร", "มณีรัตน์", "ปัญญาดี"]
@@ -116,13 +128,14 @@ if 'student_db' not in st.session_state:
     st.session_state.student_db = data
 
 # ==========================================================
-# 4. USER INTERFACE (UI)
+# ส่วนที่ 4: USER INTERFACE (UI)
+# หน้าที่: ออกแบบส่วนนำเข้าข้อมูลและการแสดงผลลัพธ์ผ่านหน้าเว็บ
 # ==========================================================
 
 st.sidebar.title("🎓 EduPredict AI Pro")
 page = st.sidebar.radio("เมนูหลัก", ["พยากรณ์ผลการเรียน", "วิเคราะห์เกรดเฉลี่ยรายปี", "ระบบจัดการฐานข้อมูล & Analytics"])
 
-# --- หน้าที่ 1: พยากรณ์ ---
+# --- [4.1] หน้าพยากรณ์: รับคะแนนปัจจุบันเพื่อพยากรณ์โอกาสผ่านด้วย AI ---
 if page == "พยากรณ์ผลการเรียน":
     st.title("🎯 ระบบพยากรณ์ผลการเรียน (AI Powered)")
     with st.form("predict_form"):
@@ -148,14 +161,15 @@ if page == "พยากรณ์ผลการเรียน":
         c2.metric("คะแนนปัจจุบัน", f"{curr}/70")
         c3.metric("ต้องทำ Final", f"{need} คะแนน")
         
+        # Recommendation Feature: แนะนำคลิปติวตามวิชาที่พยากรณ์
         st.info(f"💡 AI แนะนำ: เพื่อผลการเรียนที่ดีขึ้นในวิชา {u_sub} ควรศึกษาเพิ่มเติมจากวิดีโอด้านล่างนี้")
-        st.video(study_resources.get(u_sub)) # แสดงวิดีโอตามวิชาที่เลือก
+        st.video(study_resources.get(u_sub)) 
         
         if consent:
             st.session_state.student_db.append({"name": u_name, "uni": u_uni, "year": u_year, "grade_level": u_level, "subject": u_sub, "midterm": mid, "attendance": att, "assignment": work, "final": 0, "total": curr, "gpa": 0.0, "entry_type": "subject_only"})
             st.success("บันทึกข้อมูลเรียบร้อย")
 
-# --- หน้าที่ 2: วิเคราะห์เกรดเฉลี่ย ---
+# --- [4.2] หน้าวิเคราะห์ GPA: คำนวณเกรดเฉลี่ยรายปีตามวิชาที่กรอก ---
 elif page == "วิเคราะห์เกรดเฉลี่ยรายปี":
     st.title("📉 คำนวณและพยากรณ์เกรดเฉลี่ย (GPA)")
     with st.form("gpa_form"):
@@ -175,11 +189,12 @@ elif page == "วิเคราะห์เกรดเฉลี่ยราย
                 st.session_state.student_db.append({"name": u_name_gpa, "uni": u_uni_gpa, "year": u_year_gpa, "grade_level": u_level_gpa, "subject": "Overall GPA", "midterm": 0, "attendance": 0, "assignment": 0, "final": 0, "total": 0, "gpa": gpa, "entry_type": "gpa_only"})
                 st.success("บันทึกข้อมูล GPA แล้ว")
 
-# --- หน้าที่ 3: Analytics (จัดเรียงได้ทุกคอลัมน์ มากไปน้อย) ---
+# --- [4.3] หน้า Analytics: ส่วนค้นหาและจัดเรียงข้อมูลนักศึกษา ---
 elif page == "ระบบจัดการฐานข้อมูล & Analytics":
     st.title("📂 ระบบจัดการฐานข้อมูล & Analytics")
     t1, t2 = st.tabs(["🔍 รายชื่อนักศึกษา (รายวิชา)", "🏆 ค้นหา GPA"])
 
+    # การแสดงผลตารางข้อมูล: ใช้ Merge Sort ในการเรียงลำดับ และ Binary Search ในการค้นหา
     with t1:
         st.header("📊 รายงานคะแนนรายวิชา")
         sort_key = st.selectbox("จัดเรียงจากมากไปน้อยตาม:", ["year", "total", "midterm", "attendance", "assignment", "grade_level"], key="sort_sub")
