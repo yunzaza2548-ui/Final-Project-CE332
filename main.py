@@ -13,7 +13,7 @@ st.set_page_config(page_title="EduPredict AI Pro", page_icon="🧠", layout="wid
 # ==========================================================
 
 # [SORTING]: Merge Sort (O(n log n))
-def merge_sort(data, key, reverse=True): # ปรับ Default เป็น True ตามที่ขอ (มากไปน้อย)
+def merge_sort(data, key, reverse=True): 
     if len(data) <= 1: return data
     mid = len(data) // 2
     left = merge_sort(data[:mid], key, reverse)
@@ -26,13 +26,7 @@ def merge(left, right, key, reverse):
     while i < len(left) and j < len(right):
         val_l = left[i][key]
         val_r = right[j][key]
-        
-        # เปรียบเทียบข้อมูล (รองรับทั้งตัวเลขและตัวอักษร)
-        if reverse:
-            condition = val_l >= val_r
-        else:
-            condition = val_l <= val_r
-            
+        condition = val_l >= val_r if reverse else val_l <= val_r
         if condition:
             result.append(left[i]); i += 1
         else:
@@ -45,11 +39,9 @@ def binary_search_all(data, key, target):
     low, high = 0, len(data) - 1
     results = []
     target_val = str(target).lower()
-    
     while low <= high:
         mid = (low + high) // 2
         current_val = str(data[mid][key]).lower()
-        
         if target_val in current_val:
             results.append(data[mid])
             l, r = mid - 1, mid + 1
@@ -78,31 +70,41 @@ def predict_with_ml(mid, att, work, db):
     return current_total, (current_total / 70) * 100, max(0, 50 - current_total), 0, 0.0
 
 # ==========================================================
-# 3. MOCK DATA & CONSTANTS
+# 3. MOCK DATA & CONSTANTS (THAI NAMES & VARIOUS UNIS)
 # ==========================================================
 
 universities = [
     "มหาวิทยาลัยกรุงเทพ", "จุฬาลงกรณ์มหาวิทยาลัย", "มหาวิทยาลัยธรรมศาสตร์", 
     "มหาวิทยาลัยเกษตรศาสตร์", "มหาวิทยาลัยมหิดล", "มหาวิทยาลัยเชียงใหม่", 
-    "มหาวิทยาลัยขอนแก่น", "มหาวิทยาลัยสงขลานครินทร์", "มหาวิทยาลัยศรีนครินทรวิโรฒ",
-    "สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง", "มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี",
-    "มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ", "มหาวิทยาลัยรังสิต", "มหาวิทยาลัยอัสสัมชัญ"
+    "มหาวิทยาลัยรังสิต", "มหาวิทยาลัยอัสสัมชัญ", "ม.เทคโนโลยีพระจอมเกล้าลาดกระบัง"
 ]
 
 subjects = ["Computer Programming", "Data Structures", "Digital Logic", "Embedded Systems", "Operating Systems", "Software Engineering", "Database Systems", "Computer Networks", "Artificial Intelligence", "Robotics Design"]
-study_resources = {s: f"https://www.youtube.com/results?search_query={s.replace(' ', '+')}" for s in subjects}
+
+# ลิงก์วิดีโอแนะนำการเรียนต่อยอดในแต่ละวิชา
+study_resources = {
+    "Computer Programming": "https://www.youtube.com/watch?v=zOjov-2OZ0E",
+    "Data Structures": "https://www.youtube.com/watch?v=zg9ih6SVACc",
+    "Digital Logic": "https://www.youtube.com/watch?v=M0mx8S05v60",
+    "Embedded Systems": "https://www.youtube.com/watch?v=B6ofL_S_X6A",
+    "Operating Systems": "https://www.youtube.com/watch?v=26QPDBe-NB8",
+    "Software Engineering": "https://www.youtube.com/watch?v=pETh_as6Y78",
+    "Database Systems": "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+    "Computer Networks": "https://www.youtube.com/watch?v=IPvYjXCsTg8",
+    "Artificial Intelligence": "https://www.youtube.com/watch?v=ad79nYk2keg",
+    "Robotics Design": "https://www.youtube.com/watch?v=0yG-fMHeM6Y"
+}
 
 if 'student_db' not in st.session_state:
-    thai_firstnames = ["สมชาย", "วิชาญ", "เกรียงไกร", "นราธิป", "ธนพล", "พงศกร", "สิรินธร", "กมลวรรณ", "จิราพร", "นพรัตน์", "ชลลดา", "อภิสิทธิ์", "พีรพล", "วรวุฒิ", "กิตติพงษ์", "รัตนา", "ปิยะนุช", "นันทนา", "สุรศักดิ์", "วิภาวดี"]
-    thai_lastnames = ["ใจดี", "มั่งคั่ง", "รักเรียน", "รุ่งเรือง", "สวัสดิ์รักษา", "เจริญพร", "มณีรัตน์", "ปัญญาดี", "สุขสวัสดิ์", "ทนันชัย", "พานิช", "เลิศวิจิตร", "งามขำ", "ศรีสุข", "ทองดี", "จันทร์โอชา", "วงษ์สุวรรณ", "คงยิ่ง", "ดีเลิศ", "ชูแก้ว"]
-    
+    fnames = ["ทัตเทพ", "ณัฐพงษ์", "สิรินธร", "วรวุฒิ", "กิตติพงษ์", "ชลลดา", "ธนพล", "เบญจมาศ", "วิชุดา", "ภาณุ"]
+    lnames = ["ทนันชัย", "ทองดี", "รุ่งเรือง", "สวัสดิ์รักษา", "เจริญพร", "มณีรัตน์", "ปัญญาดี"]
     data = []
-    for _ in range(200): # สร้างข้อมูล 200 ชุด
+    for _ in range(200):
         mid, att, work = random.randint(15, 40), random.randint(7, 10), random.randint(10, 20)
         final = random.randint(10, 30)
         etype = random.choice(["subject_only", "gpa_only"])
         data.append({
-            "name": f"{random.choice(thai_firstnames)} {random.choice(thai_lastnames)}", 
+            "name": f"{random.choice(fnames)} {random.choice(lnames)}", 
             "uni": random.choice(universities), 
             "year": random.randint(2563, 2568),
             "grade_level": random.randint(1, 4),
@@ -140,12 +142,15 @@ if page == "พยากรณ์ผลการเรียน":
 
     if submit:
         curr, chance, need, pred, acc = predict_with_ml(mid, att, work, st.session_state.student_db)
-        st.subheader("📊 ผลการวิเคราะห์")
+        st.subheader("📊 ผลการวิเคราะห์และคำแนะนำ")
         c1, c2, c3 = st.columns(3)
         c1.metric("โอกาสผ่าน", f"{int(chance)}%")
         c2.metric("คะแนนปัจจุบัน", f"{curr}/70")
         c3.metric("ต้องทำ Final", f"{need} คะแนน")
-        st.divider()
+        
+        st.info(f"💡 AI แนะนำ: เพื่อผลการเรียนที่ดีขึ้นในวิชา {u_sub} ควรศึกษาเพิ่มเติมจากวิดีโอด้านล่างนี้")
+        st.video(study_resources.get(u_sub)) # แสดงวิดีโอตามวิชาที่เลือก
+        
         if consent:
             st.session_state.student_db.append({"name": u_name, "uni": u_uni, "year": u_year, "grade_level": u_level, "subject": u_sub, "midterm": mid, "attendance": att, "assignment": work, "final": 0, "total": curr, "gpa": 0.0, "entry_type": "subject_only"})
             st.success("บันทึกข้อมูลเรียบร้อย")
@@ -177,16 +182,12 @@ elif page == "ระบบจัดการฐานข้อมูล & Analyt
 
     with t1:
         st.header("📊 รายงานคะแนนรายวิชา")
-        sort_key = st.selectbox("จัดเรียงตาม:", ["year", "midterm", "attendance", "assignment", "total", "grade_level"], key="sort_sub")
-        
+        sort_key = st.selectbox("จัดเรียงจากมากไปน้อยตาม:", ["year", "total", "midterm", "attendance", "assignment", "grade_level"], key="sort_sub")
         db_sub = [i for i in st.session_state.student_db if i['entry_type'] == 'subject_only']
-        # ใช้ Merge Sort เรียงลำดับจากมากไปน้อย
         sorted_sub = merge_sort(db_sub, sort_key, reverse=True)
         
-        # ช่องค้นหา Binary Search (ค้นหาตามชื่อ)
         search_n = st.text_input("ค้นหาชื่อนักศึกษา (Binary Search)", key="sn1")
         if search_n:
-            # ต้องเรียงตามชื่อก่อนใช้ Binary Search
             sorted_for_search = merge_sort(db_sub, 'name', reverse=False)
             res = binary_search_all(sorted_for_search, 'name', search_n)
             if res: st.dataframe(pd.DataFrame(res).drop(columns=['gpa', 'entry_type']), use_container_width=True)
@@ -196,8 +197,7 @@ elif page == "ระบบจัดการฐานข้อมูล & Analyt
 
     with t2:
         st.header("🏆 รายงานเกรดเฉลี่ย (GPA)")
-        sort_key_g = st.selectbox("จัดเรียงตาม:", ["gpa", "year", "grade_level"], key="sort_gpa")
-        
+        sort_key_g = st.selectbox("จัดเรียงจากมากไปน้อยตาม:", ["gpa", "year", "grade_level"], key="sort_gpa")
         db_gpa = [i for i in st.session_state.student_db if i['entry_type'] == 'gpa_only']
         sorted_gpa = merge_sort(db_gpa, sort_key_g, reverse=True)
         
