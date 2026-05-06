@@ -92,7 +92,7 @@ study_resources = {
     "Database Systems": "https://youtu.be/6Iu45VZGQDk?si=9K35V44fJsswV0t9",
     "Computer Networks": "https://www.youtube.com/watch?v=IPvYjXCsTg8",
     "Artificial Intelligence": "https://www.youtube.com/watch?v=ad79nYk2keg",
-    "Robotics Design": "https://www.youtube.com/watch?v=0yG-fMHeM6Y"
+    "Robotics Design": "https://youtu.be/GFLa1b1juUo?si=PYGzvfhmZB4Hx158"
 }
 
 if 'student_db' not in st.session_state:
